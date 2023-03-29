@@ -9,7 +9,7 @@ import shutil
 
 def maildir2mailbox(maildirname, mboxfilename):
   # open the existing maildir and the target mbox file
-  maildir = mailbox.Maildir(maildirname, email.message_from_file)
+  maildir = mailbox.Maildir(maildirname, lambda file: email.message_from_bytes(file.read()))
   mbox = mailbox.mbox(mboxfilename)
 
   # lock the mbox
@@ -33,14 +33,23 @@ for root, dirs, files in os.walk("maildir"):
 
 for folder in folders:
   print("Processing " + folder)
-  os.makedirs(folder + "/cur")
-  os.makedirs(folder + "/new")
-  for file in glob.glob(folder + "/[0-9]*."):
+  try:
+    os.makedirs(folder + "/cur")
+  except FileExistsError:
+    pass
+  try:
+    os.makedirs(folder + "/new")
+  except FileExistsError:
+    pass
+  for file in glob.glob(folder + "/[0-9]"):
     shutil.move(file, folder + "/cur")
 
-os.makedirs("enron")
+try:
+  os.makedirs("enron")
+except FileExistsError:
+  pass
 
 for folder in folders:
-  path = "enron/" + folder.replace("/", ".").replace("maildir", "enron")
+  path = "enron\\" + folder.replace("\\", ".").replace("maildir", "enron")
   print("Writing " + folder + " -> " + path)
   maildir2mailbox(folder, path)
